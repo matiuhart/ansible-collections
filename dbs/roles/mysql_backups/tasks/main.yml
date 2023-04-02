@@ -1,0 +1,12 @@
+---
+# tasks file for mysql-backups
+- name: Copiado de script de mysql-backups
+  copy:
+    src: mysql_backups.sh
+    dest: /usr/local/bin/mysql_backups
+    mode: +x
+
+- name: Creacion de directorio para backups de BDs
+  file:
+    path: /home/backups
+    state: directory

@@ -1,0 +1,7 @@
+# Postfix relay host client variables
+relay_server: 
+relay_server_port: 587
+relay_user: 
+relay_user_password: 
+mail_domain: 
+dst_mail_test: 

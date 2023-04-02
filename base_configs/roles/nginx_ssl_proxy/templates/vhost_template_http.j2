@@ -1,0 +1,13 @@
+server {
+  listen 80;
+  server_name {{ vhost_name }} {{ aditional_vhost_names -}};
+
+  # Redirect to HTTPS
+  location / {
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    return 301 https://{{ vhost_name }};
+  }
+}
+
+ 

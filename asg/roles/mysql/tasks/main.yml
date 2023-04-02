@@ -1,0 +1,67 @@
+---
+- name: Instalando dependencias python para administrar mysql
+  ansible.builtin.pip:
+    name:
+      - PyMySQL
+    executable: pip3
+
+- name: Instalando mysql
+  apt:
+    name:
+      - mysql-server
+      - mysql-client
+    state: present
+
+- name: Verificar si el archivo my.cnf existe
+  stat:
+    path: /root/.my.cnf
+  register: mycnf_file_stat
+
+- name: Creando archivo de configuracion de mysql para futuras conexiones administrativas
+  template:
+    src: my.cnf.j2
+    dest: /root/.my.cnf
+    mode: 600
+    owner: root
+    group: root
+  no_log: true
+
+- name: Autenticacion mysql a mysql_native_password
+  shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
+  when: not mycnf_file_stat.stat.exists
+
+- name: Flush Privileges
+  shell: mysql -u root -e 'FLUSH PRIVILEGES'
+  when: not mycnf_file_stat.stat.exists
+
+- name: Actualiza pass de user root
+  mysql_user:
+    login_host: 'localhost'
+    login_user: 'root'
+    login_password: ''
+    name: root
+    host: localhost
+    password: "{{ vault_mysql_root_user_pwd }}"
+    state: present
+  no_log: true
+
+- name: Configura mysql
+  ini_file:
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+    section: mysqld
+    option: "{{ item.option }}"
+    value: "{{ item.value }}"
+  register: my_cnf
+  with_items:
+    - { option: bind-address, value: '0.0.0.0' }
+    - { option: port, value: '3306' }
+    - { option: innodb_buffer_pool_size, value: "{{ mysql_innodb_buffer_pool_size |default('128M') }}" }
+    - { option: datadir, value: "{{ mysql_datadir | default('/var/lib/mysql') }}" }
+  notify:
+    - Restart mysql
+
+- name: Remueve todas las cuentas anonimas
+  community.mysql.mysql_user:
+    name: ''
+    host_all: yes
+    state: absent

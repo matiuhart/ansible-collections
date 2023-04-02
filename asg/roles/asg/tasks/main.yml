@@ -1,0 +1,17 @@
+- name: Create temporal directory certs
+  file:
+    path: "{{ download_path }}"
+    state: directory
+
+- name: Listing the available certs
+  uri:
+    url: "{{ asg_url }}/api/objects/ca/host_key_cert/"
+    user: "{{ vault_asg_user }}"
+    password: "{{ vault_asg_user_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+  register: available_certs
+
+- name: Downloading each specified cert
+  include_tasks: download_certs.yaml
+  loop: "{{ certs }}"

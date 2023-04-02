@@ -1,0 +1,46 @@
+---
+- name: Instalacion de postfix y deps
+  apt: name={{ item }} state=latest
+  loop:
+    - postfix
+    - mailutils
+    - python-apt
+    - libsasl2-modules
+
+- name: Verifico existencia de mailnae
+  stat:
+    path: /etc/mailname
+  register: mailname_result
+
+- name: Creo archivo mailname
+  shell: echo {{ ansible_fqdn }} > /etc/mailname
+  when: mailname_result
+
+- name: Instalacion de postfix
+  apt: name=postfix state=latest
+
+- name: Copiado de template main.cf
+  template: src=main.cf dest=/etc/postfix/main.cf backup=yes
+
+- name: Creando directorio sasl
+  file:
+    path: /etc/postfix/sasl/
+    state: directory
+    #mode: '0755'
+
+- name: Copiado de archivos sasl
+  template: src=sasl_password dest=/etc/postfix/sasl/sasl_password backup=yes
+  
+- name: Hasheo de archivo sasl_password
+  shell: postmap /etc/postfix/sasl/sasl_password
+  notify: restart_postfix
+
+- name: Generando archivo de prueba
+  template: 
+    src: mail_test.sh 
+    dest: /tmp/mail_test.sh 
+    backup: yes
+    mode: 0775 
+
+- name: Enviando mensaje de prueba
+  shell: /tmp/mail_test.sh

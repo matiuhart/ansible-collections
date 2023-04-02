@@ -1,0 +1,38 @@
+server {
+  listen 80;
+  server_name {{ vhost_name }} {{ aditional_vhost_names -}};
+
+  # Redirect to HTTPS
+  location / {
+    {% if extra_https_local_root_site_configs %}
+    {{- extra_http_local_root_site_configs | indent(4) }}
+    {% endif %}
+    
+    add_header Strict-Transport-Security "max-age=31536000" always;
+
+    return 301 https://{{ vhost_name }};
+  }
+}
+
+server {
+  listen 443 ssl http2;
+  server_name {{ vhost_name }} {{ aditional_vhost_names -}};
+
+  ssl_certificate         "/etc/letsencrypt/live/{{ vhost_name }}/fullchain.pem";
+  ssl_certificate_key     "/etc/letsencrypt/live/{{ vhost_name }}/privkey.pem";
+  ssl_trusted_certificate "/etc/letsencrypt/live/{{ vhost_name }}/chain.pem";
+  
+  # Proxy to app container
+  location / {
+    {% if extra_https_local_root_site_configs %}
+    {{- extra_https_local_root_site_configs | indent(4) }}
+    {% endif %}
+    
+    proxy_set_header  Host              $host;
+    proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header  X-Forwarded-Proto 'https';
+
+    proxy_pass http://{{ proxy_pass_host }}:{{ proxy_pass_port }};
+  }
+}
+ 

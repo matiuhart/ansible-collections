@@ -1,0 +1,48 @@
+#
+## CAUTION! File managed with Ansible, any change will be overwrited
+#
+
+Job {
+  Name = "{{ inventory_hostname }}"
+  JobDefs = "LIBRERIA-LTO7"
+  Client = {{ inventory_hostname }}-fd
+  Level = Incremental
+  FileSet="{{ inventory_hostname }}"
+  Write Bootstrap = "/var/lib/bacula/%n.bsr"
+  Priority = 11
+  Enabled = yes
+}
+
+Client {
+  Name = {{ inventory_hostname }}-fd
+  Address = {{ inventory_hostname }}.dpsca.local
+  FDPort = 9102
+  Catalog = MyCatalog
+  Password = "{{ vault_bacula_dir_password }}"
+  File Retention = 30 days            # 30 days
+  #Job Retention = 6 months            # six months
+  AutoPrune = yes                     # Prune expired Jobs/Files
+}
+
+
+# Carpetas a backupear
+FileSet {
+  Name = "{{ inventory_hostname }}"
+  Include {
+    Options {
+      signature = MD5
+    }
+  {% for path in bacula_dir_to_backups %}
+  File = {{ path }}
+  {% endfor %}
+  }
+
+  Exclude {
+    {%if bacula_dir_to_exclude -%}
+    {% for path in bacula_dir_to_exclude %}
+    File = {{ path }}
+    {% endfor %}
+    {%endif -%}
+    }
+  }
+  

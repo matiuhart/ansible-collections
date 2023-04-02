@@ -1,0 +1,8 @@
+---
+# Inicia y habilita el servicio SSH de Windows
+- name: start_ssh_win
+  become: false
+  win_service:
+    name: sshd 
+    state: started
+    start_mode: auto

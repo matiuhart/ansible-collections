@@ -1,0 +1,18 @@
+- name: Getting cert for {{ item }}
+  uri:
+    url: "{{ asg_url }}/api/objects/ca/host_key_cert/{{ available_certs.json | json_query('[? name==`{}`]._ref'.format(item))|first }}"
+    user: "{{ vault_asg_user }}"
+    password: "{{ vault_asg_user_password }}"
+    force_basic_auth: yes
+    validate_certs: no
+  register: results
+
+- name: Saving Cert for {{ item }}
+  copy:
+    content: "{{ results.json.certificate }}" 
+    dest: "{{ download_path }}/{{ item }}.pem"
+
+- name: Saving Cert Key for {{ item }}
+  copy:
+    content: "{{ results.json.key }}" 
+    dest: "{{ download_path }}/{{ item }}.key"

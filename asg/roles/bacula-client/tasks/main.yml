@@ -1,0 +1,62 @@
+---
+- name: Install liblzo2-2
+  apt:
+    name: 
+      - liblzo2-2
+    state: present
+    update_cache: yes
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: Download file libss
+  get_url:
+    url: http://launchpadlibrarian.net/611216907/libssl1.1_1.1.1f-1ubuntu2.16_amd64.deb
+    dest: /tmp/libssl1.1.deb
+  when: "'libssl1.1' not in ansible_facts.packages"
+
+- name: download file bacula-common
+  get_url:
+    url: http://launchpadlibrarian.net/474574266/bacula-common_9.4.2-2ubuntu5_amd64.deb
+    dest: /tmp/bacula-common.deb
+  when: "'bacula-common' not in ansible_facts.packages"
+
+- name: download file bacula-fd
+  get_url:
+    url: http://launchpadlibrarian.net/474574270/bacula-fd_9.4.2-2ubuntu5_amd64.deb
+    dest: /tmp/bacula-fd.deb
+  when: "'bacula-fd' not in ansible_facts.packages"
+
+- name: Install libssl1.1
+  apt: deb="/tmp/libssl1.1.deb"
+  when: "'libssl1.1' not in ansible_facts.packages"
+
+- name: Install bacula-common
+  apt: deb="/tmp/bacula-common.deb"
+  when: "'bacula-common' not in ansible_facts.packages"
+
+- name: Install bacula-fd
+  apt: 
+    deb: /tmp/bacula-fd.deb
+  when: "'bacula-fd' not in ansible_facts.packages"
+                                                                 
+- name: Copying bacula-fd file
+  template:
+    src: bacula-fd.conf.j2
+    dest: /etc/bacula/bacula-fd.conf
+  notify: Restart bacula-fd
+
+- name: Copying bacula-fd file
+  template:
+    src: bacula-fd.conf.j2
+    dest: /etc/bacula/bacula-fd.conf
+  notify: Restart bacula-fd
+
+- name: Copy the new client configuration to bacula server
+  template:
+    src: client.conf.j2
+    dest: "/etc/bacula/include/clients/{{ inventory_hostname }}.conf"
+  delegate_to: mort
+  notify: Reload bacula server config
+

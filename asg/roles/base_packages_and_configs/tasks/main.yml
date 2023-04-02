@@ -1,0 +1,31 @@
+---
+- name: Configurando hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  when: ansible_facts['nodename'] != inventory_hostname
+
+- name: Configuring Timezone
+  timezone:
+    name: America/Argentina/Buenos_Aires  
+
+- name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 30
+
+- name: Instalar paquetes basicos en Debian/Ubuntu
+  apt: 
+    name: "{{ base_packages }}"
+    state: present
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
+
+- name: Installing basic python packages
+  ansible.builtin.pip:
+    name: "{{ base_python_pkgs }}"
+    executable: pip3
+
+- name: Installing additional packages for the server features
+  apt: 
+    name: "{{ aditional_packages }}"
+    state: present
+  when: ansible_distribution == "Debian" or ansible_distribution == "Ubuntu"
