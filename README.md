@@ -22,6 +22,12 @@ ansible-galaxy collection install git@github.com:matiuhart/ansible-collections.g
 ansible-galaxy collection install git@github.com:matiuhart/ansible-collections.git#/base_configs,7b60ddc245bc416b72d8ea6ed7b799885110f5e5 -p collections
 ```
 
+## Actualizar collections
+
+```
+ansible-galaxy collection install --upgrade git@github.com:matiuhart/ansible-collections.git
+```
+
 ## Como utilizar
 Dentro del playbook podemos referenciar un rol dentro de las collections de estas dos maneras
 
