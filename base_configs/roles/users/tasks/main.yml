@@ -28,7 +28,7 @@
 - name: "Copia authorized keys"
   authorized_key:
     user: "{{ item.username }}"
-    key: "{{ lookup('file', '../../../../../../roles/ssh/pub_keys/'+ item.username + '.pub') }}"
+    key: "{{ lookup('file', '{{ inventory_dir }}/roles/ssh/pub_keys/'+ item.username + '.pub') }}"
   with_items: "{{ users }}"
 
 - name: "Permite sudo sin pass de admins"
