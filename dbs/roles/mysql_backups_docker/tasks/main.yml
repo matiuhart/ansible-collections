@@ -1,0 +1,6 @@
+---
+# tasks file for mysql-backups
+- name: Copiado de script de mysql-backups
+  copy:
+    src: mysql_backups_docker.sh
+    dest: /usr/local/bin/mysql_backups_docker
