@@ -53,10 +53,28 @@
 - include_tasks: docker-users.yml
   when: docker_users | length > 0
 
-- name: Crea carpeta /home/dockers
+- name: Adding Cron to clean docker trash
+  cron:
+    name: "Purge docker trash"
+    job: docker system prune -af
+    minute: "30"
+    hour: "0"
+
+- name: Adding Cron to clean docker logs 
+  cron:
+    name: "Purge docker logs"
+    job: truncate -s 0 /var/lib/docker/containers/*/*-json.log
+    weekday: mon
+
+- name: Adding Cron to clean docker volumes 
+  cron:
+    name: "Purge docker unused volumes"
+    job: docker volume rm $(docker volume ls -qf dangling=true)
+    weekday: mon
+
+- name: Ensure /home/docker directory exists.
   file:
-    path: /home/dockers
+    path: /home/docker
     state: directory
-    # mode: 0750
-    # gid: 1001
-    # uid: 1001
+    owner: deployments
+    group: docker
