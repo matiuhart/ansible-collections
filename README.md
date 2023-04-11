@@ -1,5 +1,5 @@
 # Collections para ansible
-Este repositorio fue creado con el fin de simplificar la administracion de roles que se utilizan habitialmente. Cree colleciones de roles por tipo de configuraciones aplicadas
+Este repositorio fue creado con el fin de simplificar la administracion de roles que se utilizan habitialmente. Cree colleciones de roles por tipo de configuraciones aplicadas. Para uitlizar esta collection es necesario Ansible version 2.10 o superior.
 
 ## Instalar collections desde repositorio git
 Se están utilizando collections para simplificar el mantenimiento de los roles, podemos instalarlas de la siguiente forma
@@ -92,9 +92,15 @@ Dentro del playbook podemos referenciar un rol dentro de las collections de esta
     - nginx_ssl_proxy
   
   tasks:
-    - include_role:
-        name: matiuhart.base_configs."{{item}}"
-      with_items:
-        - users
-        - docker
+    - name: Importado de roles base
+      include_role:
+        name: "{{ role_name }}"
+      loop:
+        - matiuhart.base_configs.users
+        - matiuhart.base_configs.base_packages_and_configs
+        - matiuhart.docker.docker_install
+        - matiuhart.dbs.mysql
+        - matiuhart.dbs.mysql_backups
+      loop_control:
+        loop_var: role_name
 ```
