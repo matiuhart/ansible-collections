@@ -5,12 +5,16 @@
       - PyMySQL
     executable: pip3
 
-- name: Instalando mysql
+- name: Instalando mysql 8
   apt:
     name:
       - mysql-server
       - mysql-client
     state: present
+  when: mysql_version is undefined
+
+- include_tasks: mysql5.yaml
+  when: mysql_version == "5.7"
 
 - name: Verificar si el archivo my.cnf existe
   stat:

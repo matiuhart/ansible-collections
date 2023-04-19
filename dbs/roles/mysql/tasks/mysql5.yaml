@@ -1,0 +1,14 @@
+---
+- name: Add public key mysql 5.7 from ubuntu server
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 467B942D3A79BD29
+- name: add mysql 5.7 apt repository
+  apt_repository:
+    repo: 'deb http://repo.mysql.com/apt/ubuntu bionic mysql-5.7'
+    state: present
+    update_cache: yes
+- name: Install mysql client 5.7
+  apt:
+    name: mysql-client=5.7*
+    state: present
