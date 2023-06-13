@@ -1,5 +1,10 @@
 # Collections para ansible
 Este repositorio fue creado con el fin de simplificar la administracion de roles que se utilizan habitialmente. Cree colleciones de roles por tipo de configuraciones aplicadas. Para uitlizar esta collection es necesario Ansible version 2.10 o superior.
+## Dependencias
+Antes de poder utilizar estas collections es necesario instalar otras collections que son dependencias
+ansible-galaxy collection install  community.general -p collections
+ansible-galaxy collection install  community.windows -p collections
+ansible-galaxy collection install  ansible.posix -p collections
 
 ## Instalar collections desde repositorio git
 Se están utilizando collections para simplificar el mantenimiento de los roles, podemos instalarlas de la siguiente forma
