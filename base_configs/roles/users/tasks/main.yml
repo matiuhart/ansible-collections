@@ -37,3 +37,37 @@
     state: "present"
     regexp: "^%sudo"
     line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+
+
+#
+## TODO Si el user deployments existe en variables de creacion de usuarios, chequear si existe priv key, 
+#  si noexiste generarla y copiarla
+#
+# - name: set_fact when deployments_exists in key
+#   ansible.builtin.set_fact:
+#     deployments_exists: true
+#   loop: "{{ lookup('ansible.builtin.dict', users) }}"
+#   when: "'deployments' in item.username"
+
+
+# - name: Verificando si existen claves ssh para usuario deployments
+#   stat:
+#     path: '{{ inventory_dir }}/roles/ssh/pub_keys/ssh-keys_deployments/'
+#     #state: directory
+#   register: id_rsa_status
+#   delegate_to: localhost
+
+# - name: debug
+#   debug:
+#     var:  id_rsa_status
+#     verbosity: 0
+
+# - name: Copiado de llaves ssh para usuario deployments
+#   copy:
+#     src: '{{ inventory_dir }}/roles/ssh/pub_keys/ssh-keys_deployments/'
+#     dest: /home/deployments/.ssh/
+#     decrypt: yes
+#     owner: deployments
+#     group: deployments
+#     mode: 0400
+#   when: id_rsa_status.stat.exists

@@ -32,7 +32,9 @@
 
 - name: Autenticacion mysql a mysql_native_password
   shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
-  when: not mycnf_file_stat.stat.exists
+  when: 
+    - not mycnf_file_stat.stat.exists
+    - mysql_version is undefined
 
 - name: Flush Privileges
   shell: mysql -u root -e 'FLUSH PRIVILEGES'
