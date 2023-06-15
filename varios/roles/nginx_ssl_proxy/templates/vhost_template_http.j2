@@ -2,12 +2,23 @@ server {
   listen 80;
   server_name {{ vhost_name }} {{ aditional_vhost_names -}};
 
-  # Redirect to HTTPS
   location / {
     add_header Strict-Transport-Security "max-age=31536000" always;
-
+  {% if certbot_admin_email is defined %}
+    # Redirect to HTTPS
     return 301 https://{{ vhost_name }};
+  {% endif %}
+
+  {% if certbot_admin_email is not defined %}
+    proxy_set_header  Host              $host;
+    proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
+
+    proxy_pass http://{{ proxy_pass_host }}:{{ proxy_pass_port }};
+
+    {% if extra_http_local_root_site_configs %}
+    {{- extra_http_local_root_site_configs | indent(4) }}
+    {% endif %}
+  {% endif %}
   }
 }
 
- 
