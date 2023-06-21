@@ -14,7 +14,7 @@
   when: mysql_version is undefined
 
 - include_tasks: mysql5.yaml
-  when: mysql_version == "5.7"
+  when: mysql_version is defined and mysql_version == "5.7"
 
 - name: Verificar si el archivo my.cnf existe
   stat:
@@ -32,7 +32,7 @@
 
 - name: Autenticacion mysql a mysql_native_password
   shell: mysql -u root -e 'UPDATE mysql.user SET plugin="mysql_native_password" WHERE user="root" AND host="localhost"'
-  when: 
+  when:
     - not mycnf_file_stat.stat.exists
     - mysql_version is undefined
 
@@ -50,6 +50,7 @@
     password: "{{ vault_mysql_root_user_pwd }}"
     state: present
   no_log: true
+  ignore_errors: true
 
 - name: Configura mysql
   ini_file:
