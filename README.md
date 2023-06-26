@@ -11,8 +11,15 @@ Se están utilizando collections para simplificar el mantenimiento de los roles,
 
 **Instala todas las collections que existen en repo**
 
+*Via ssh*
 ```
 ansible-galaxy collection install --upgrade git@github.com:matiuhart/ansible-collections.git -p collections
+```
+
+*Via https*
+
+```
+ansible-galaxy collection install git+https://github.com/matiuhart/ansible-collections.git -p collections
 ```
 
 **Instala solo la base_configs desde el repo**
