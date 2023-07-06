@@ -4,6 +4,7 @@
     name:
       - PyMySQL
     executable: pip3
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Instalando mysql 8
   apt:
