@@ -23,6 +23,7 @@
   ansible.builtin.pip:
     name: "{{ base_python_pkgs }}"
     executable: pip3
+  ignore_errors: true
 
 - name: Installing additional packages for the server features
   apt: 
