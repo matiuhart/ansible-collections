@@ -1,4 +1,5 @@
 ---
 base_python_pkgs:
 base_packages:
+  - python3-pip
 aditional_packages :
