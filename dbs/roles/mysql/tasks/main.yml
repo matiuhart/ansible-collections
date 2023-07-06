@@ -73,4 +73,4 @@
     name: ''
     host_all: yes
     state: absent
-  ignore_errors: "{{ ansible_check_mode }}"
+  ignore_errors: true
