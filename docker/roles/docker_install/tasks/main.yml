@@ -78,3 +78,4 @@
     state: directory
     owner: deployments
     group: docker
+  ignore_errors: "{{ ansible_check_mode }}"  

@@ -30,7 +30,7 @@
     user: "{{ item.username }}"
     key: "{{ lookup('file', '{{ inventory_dir }}/roles/ssh/pub_keys/'+ item.username + '.pub') }}"
   with_items: "{{ users }}"
-  ignore_errors: true
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: "Permite sudo sin pass de admins"
   lineinfile:
