@@ -69,7 +69,7 @@
       src: vhost_template_http.j2
       dest:  "/etc/nginx/sites-enabled/{{ item.vhost_name }}.conf"
       backup: False
-      force: False
+      force: True
     vars:
       vhost_name: "{{ item.vhost_name }}"
       proxy_pass_host: "{{ item.proxy_pass_host | default('127.0.0.1', true) }}"
