@@ -21,8 +21,8 @@
       force: False
     vars:
       vhost_name: "{{ item.vhost_name }}"
-      proxy_pass_host: "{{ item.proxy_pass_host }}"
-      proxy_pass_port: "{{ item.proxy_pass_port }}"
+      proxy_pass_host: "{{ item.proxy_pass_host | default('127.0.0.1', true) }}"
+      proxy_pass_port: "{{ item.proxy_pass_port | default() }}"
       aditional_vhost_names: "{{ item.aditional_vhost_names | default() }}"
       ssl_template: False
     with_items: "{{ vhosts }}"
