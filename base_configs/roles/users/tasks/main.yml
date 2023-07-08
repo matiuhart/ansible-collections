@@ -2,7 +2,6 @@
 # TODO chequear si docker está instalado y unir usuarios de norber, diego, matias y deployment
 # a grupo docker
 
-
 # Creaa grupo docker
 - name: Ensure group "docker" exists
   ansible.builtin.group:
@@ -28,7 +27,7 @@
 - name: "Copia authorized keys"
   authorized_key:
     user: "{{ item.username }}"
-    key: "{{ lookup('file', '{{ inventory_dir }}/roles/ssh/pub_keys/'+ item.username + '.pub') }}"
+    key: "{{ lookup('file', '{{ inventory_dir }}/files/ssh/pub_keys/'+ item.username + '.pub') }}"
   with_items: "{{ users }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
