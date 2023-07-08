@@ -1,0 +1,23 @@
+---
+- name: Checking if aws-cli is installed
+  stat:
+    path: /usr/local/bin/aws
+  register: aws_cli_installed
+
+- name: Downloading the latest aws-cli release
+  get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: /tmp/awscli.zip
+  register: awscli_downloaded
+  when: not aws_cli_installed.stat.exists
+
+- name: Uncompresing aws-cli
+  ansible.builtin.unarchive:
+    src: /tmp/awscli.zip
+    remote_src: true
+    dest: /tmp/
+  when: awscli_downloaded.changed == true
+  ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Installig aws-cli
+  ansible.builtin.command: /tmp/aws/install --update

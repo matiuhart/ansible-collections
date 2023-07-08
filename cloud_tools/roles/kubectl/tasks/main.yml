@@ -1,0 +1,58 @@
+---
+- name: Checking if kubectl is installed
+  stat:
+    path: /usr/local/bin/kubectl
+  register: kubectl_installed
+
+- name: Checking if kubelogin is installed
+  stat:
+    path: /usr/local/bin/kubelogin
+  register: kubelogin_installed
+
+- name: Get latest kubectl version
+  uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: yes
+  register: kubectl_latest_version
+  when: not kubectl_installed.stat.exists
+
+- name: Downloading the latest kubectl release
+  get_url:
+    url: https://dl.k8s.io/release/{{ kubectl_latest_version.content }}/bin/linux/amd64/kubectl
+    dest: /tmp/kubectl
+  register: kubectl_downloaded
+  when: kubectl_latest_version.content is defined
+
+- name: Move kubectl and change permissions
+  file:
+    src: /tmp/kubectl
+    dest: /usr/local/bin/kubectl
+    state: hard
+    owner: root
+    group: root
+    mode: +x
+  when: kubectl_downloaded.changed == true
+
+- name: Downloading kubelogin v0.0.28
+  get_url:
+    url: https://github.com/Azure/kubelogin/releases/download/v0.0.28/kubelogin-linux-amd64.zip
+    dest: /tmp/kubelogin.zip
+  register: kubelogin_downloaded
+  when: not kubelogin_installed.stat.exists
+
+- name: Uncompresing kubelogin
+  ansible.builtin.unarchive:
+    src: /tmp/kubelogin.zip
+    remote_src: true
+    dest: /usr/local/bin/
+  when: kubelogin_downloaded.changed == true
+
+- name: Move kubelogin and change permissions
+  file:
+    src: /tmp/kubectl
+    dest: /usr/local/bin/kubelogin
+    state: hard
+    owner: root
+    group: root
+    mode: +x
+  when: kubelogin_downloaded.changed == true
