@@ -1,0 +1,120 @@
+---
+- name: Administrar IIS en {{ inventory_hostname }}
+  hosts: winserver
+  gather_facts: no
+  vars:
+    sites:
+      - site: test.mysite.com
+        https: 1
+      - site: test.mysite.com
+        https: 0
+    letsencrypt_email: myemail@myemail.com
+
+  tasks:
+    - name: Installar funcionalidad de IIS en {{ inventory_hostname }}
+      win_feature:
+        name: Web-Server
+        state: present
+        restart: no
+        include_sub_features: no
+        include_management_tools: yes
+
+    - name: Start IIS service
+      win_service:
+        name: W3Svc
+        state: started
+
+    - name: Descarga de win-acme
+      win_uri:
+        url: https://github.com/win-acme/win-acme/releases/download/v2.1.23.1315/win-acme.v2.1.23.1315.x64.trimmed.zip
+        dest: C:\Windows\Temp\win-acme.zip
+
+
+    - name: Descomprimiendo win-acme
+      win_unzip:
+        src: C:\Windows\Temp\win-acme.zip
+        dest: C:\Program Files\win-acme
+        delete_archive: True # not required. Remove the zip file, after unzipping.
+        creates:  # not required. If this file or directory exists the specified src will not be extracted.
+
+    - name: Creando certificado para sitio en  {{ inventory_hostname }}
+      win_command: wacs --source manual --force --host "{{ item.site }}" --friendlyname "{{ item.site }}" --certificatestore WebHosting --accepttos --emailaddress matias@mtu-it.com.ar --commonname "{{ item.site }}"
+      args:
+        chdir: C:\Users\Administrator\Downloads\win-acme
+      loop: "{{ sites }}"
+      when: item.https == 1
+
+    - name: Lista todos certificados existentes y sus datos
+      community.windows.win_certificate_info:
+        store_name: WebHosting
+      register: CertList
+
+    - name: Creando diccionario de Nombres de certificados y thumbprints
+      no_log: True
+      set_fact:
+        thumbprints: "{{ thumbprints|default({}) | combine ( {item.friendly_name : item.thumbprint}) }}"
+      with_items: "{{ CertList | to_json | from_json| json_query('certificates[*]') }}"
+
+    - name: Crear carpetas para sitios en {{ inventory_hostname }}
+      win_file:
+        path: "D:\\{{ item.site }}"
+        state: directory
+      with_items: "{{ sites }}"
+
+    - name: Crear carpetas para logs de los sitios en {{ inventory_hostname }}
+      win_file:
+        path: "D:\\IIS-LOGS\\websites\\{{ item.site }}"
+        state: directory
+      with_items: "{{ sites }}"
+
+    - name: Creando nuevo apppool en ISS de {{ inventory_hostname }}
+      win_iis_webapppool:
+        name: "{{ item.site }}"
+        state: started
+      with_items: "{{ sites }}"
+
+    - name: Creando configuracion para sitios en IIS site de {{ inventory_hostname }}
+      win_iis_website:
+        name: "{{ item.site }}"
+        state: started
+        port: 80
+        ssl: yes
+        ip: '*'
+        hostname: "{{ item.site }}"
+        application_pool: "{{ item.site }}"
+        physical_path: "D:\\{{ item.site }}"
+        parameters: "logfile.directory:D:\\IIS-LOGS\\websites\\{{ item.site }}|logfile.period:Hourly|logFile.logFormat:W3C"
+      register: website
+      with_items: "{{ sites }}"
+
+    - name: Creando binding https para sitios en IIS de {{ inventory_hostname }}
+      win_iis_webbinding:
+        name: "{{ item.site }}"
+        ssl_flags: 0
+        protocol: https
+        host_header: "{{ item.site }}"
+        port: 443
+        ip: "*"
+        certificate_store_name: WebHosting
+        certificate_hash: "{{ CertList | to_json | from_json| json_query('certificates[?contains(friendly_name,`{}`)].thumbprint'.format(item.site))|first }}"
+        state: present
+        attributes:
+          managedRuntimeVersion: v4.0
+      register: binding_info
+      loop: "{{ sites }}"
+      when: item.https == 1
+
+    - name: Informacion de webapps creadas en {{ inventory_hostname }}
+      debug:
+        var: website
+
+    - name: Informacion de de bindings creados/modificados en {{ inventory_hostname }}
+      debug:
+        var: binding_info
+
+    - debug:
+        msg: |
+          El Thumbprint para {{ item.site }} es "{{ CertList | to_json | from_json| json_query('certificates[?contains(friendly_name,`{}`)].thumbprint'.format(item.site))|first }}"
+      loop: "{{ sites }}"
+      when: item.https == 1
+

@@ -1,0 +1,66 @@
+---
+# DEPS
+# ansible-galaxy collection install community.mysql
+# ansible-galaxy collection install ansible.posix
+- hosts: migracion
+  gather_facts: false
+  vars:
+    dbs:
+      - my_db_1
+      - my_db_2
+    servers:
+      origin: my_origin_server
+      destination: my_destination_server
+    mysql_creds:
+      origin_user: my_origin_mysql_user
+      origin_password: my_origin_mysql_password
+      dst_user: my_dst_mysql_user
+      dst_password: my_dst_mysql_password
+  
+  tasks:
+    - name: "Installing python deps packages"
+      become: yes
+      ansible.builtin.pip:
+        name:
+          - PyMySQL
+        executable: pip3
+
+    - name: "Dumping databases on origin server"
+      community.mysql.mysql_db:
+        state: dump
+        login_user: "{{ mysql_creds.origin_user }}"
+        login_password: "{{ mysql_creds.origin_password }}"
+        login_host: localhost
+        name: 
+          - "{{ item }}"
+        target: "/tmp/{{ item }}.sql.gz"
+      with_items: "{{ dbs }}"
+      when: inventory_hostname == servers.origin
+
+    - name: "Downloading databases to local fs"
+      ansible.builtin.fetch:
+        src: "/tmp/{{ item }}.sql.gz"
+        dest: /tmp/
+        mode: pull
+      with_items: "{{ dbs }}"
+      when: inventory_hostname == servers.origin
+
+    - name: "Copying dumps to destination server"
+      become: yes
+      copy:
+        src: "/tmp/{{ servers.origin }}/tmp/{{ item }}.sql.gz"
+        dest: /tmp/
+      with_items: "{{ dbs }}"
+      when: inventory_hostname == servers.destination
+      ignore_errors: "{{ ansible_check_mode }}"
+
+    - name: "Restoring dumps on destination server"
+      community.mysql.mysql_db:
+        login_user: "{{ mysql_creds.dst_user }}"
+        login_password: "{{ mysql_creds.dst_password }}"
+        login_host: localhost
+        name: "{{ item }}"
+        state: import
+        target: "/tmp/{{ item }}.sql.gz"
+      with_items: "{{ dbs }}"
+      when: inventory_hostname == servers.destination
