@@ -1,18 +1,18 @@
 ---
-- name: Aplicando cambios para configuraciones con letsencrypt
+- name: Update apt cache.
+  apt: update_cache=yes cache_valid_time=86400
+  when: not ansible_check_mode
+
+- name: Ensure dependencies are installed
+  apt:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  
+- name: Applying config for sites with https enabled using letsencrypt
   block:
-  - name: Update apt cache.
-    apt: update_cache=yes cache_valid_time=86400
-    changed_when: false
-
-  - name: Ensure dependencies are installed
-    apt:
-      name:
-        - nginx
-        - certbot
-        - python3-certbot-nginx
-      state: present
-
   - name: Creating base nginx config site for get new cert
     template:
       src: vhost_template_http.j2
@@ -25,14 +25,17 @@
       proxy_pass_port: "{{ item.proxy_pass_port | default() }}"
       aditional_vhost_names: "{{ item.aditional_vhost_names | default() }}"
       ssl_template: False
-    with_items: "{{ vhosts }}"
+
+    loop: "{{ vhosts }}"
+    when: item.https
 
   - name: Create cert if not exists
     command:
       cmd: certbot certonly --nginx --noninteractive --agree-tos --email "{{ certbot_admin_email }}" -d "{{ item.vhost_name }}"
       creates: /etc/letsencrypt/live/{{ item.vhost_name }}
       warn: false
-    with_items: "{{ vhosts }}"
+    loop: "{{ vhosts }}"
+    when: item.https
 
   - name: Creating https vhost config files
     template:
@@ -48,22 +51,13 @@
       extra_http_local_root_site_configs: "{{ item.extra_http_local_root_site_configs | default() }}"
       aditional_vhost_names: "{{ item.aditional_vhost_names | default() }}"
       ssl_template: True
-    with_items: "{{ vhosts }}"
     notify: reload nginx
+    loop: "{{ vhosts }}"
+    when: item.https
   when: certbot_admin_email is defined
 
-- name: Aplicando cambios para configuraciones sin letsencrypt
+- name: Applying config for sites without letsencrypt
   block:
-  - name: Update apt cache.
-    apt: update_cache=yes cache_valid_time=86400
-    changed_when: false
-
-  - name: Ensure dependencies are installed
-    apt:
-      name:
-        - nginx
-      state: present
-
   - name: Creating base nginx http config for sites
     template:
       src: vhost_template_http.j2
@@ -77,6 +71,6 @@
       extra_http_local_root_site_configs: "{{ item.extra_http_local_root_site_configs | default() }}"
       aditional_vhost_names: "{{ item.aditional_vhost_names | default() }}"
       ssl_template: false
-    with_items: "{{ vhosts }}"
     notify: reload nginx
-  when: certbot_admin_email is undefined
+    loop: "{{ vhosts }}"
+    when: not item.https

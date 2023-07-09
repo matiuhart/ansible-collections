@@ -4,12 +4,12 @@ server {
 
   location / {
     add_header Strict-Transport-Security "max-age=31536000" always;
-  {% if certbot_admin_email is defined %}
+  {% if certbot_admin_email is defined and item.https %}
     # Redirect to HTTPS
     return 301 https://{{ vhost_name }};
   {% endif %}
 
-  {% if certbot_admin_email is not defined %}
+  {% if not item.https %}
     proxy_set_header  Host              $host;
     proxy_set_header  X-Forwarded-For   $proxy_add_x_forwarded_for;
 
@@ -21,4 +21,3 @@ server {
   {% endif %}
   }
 }
-
