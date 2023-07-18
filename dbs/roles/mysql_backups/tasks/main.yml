@@ -10,3 +10,12 @@
   file:
     path: /home/backups
     state: directory
+
+- name: Crontab backup job for databases
+  cron:
+    name: "Crontab mysql backup job for {{ item }} database"
+    job: mysql_backups --database "{{ item }}" --path "/home/backups/dbs/{{ item }}" --task dump --remove-old 15
+    minute: "0"
+    hour: "0"
+  loop: "{{ mysql_db_backups }}"
+  when: mysql_db_backups is defined
