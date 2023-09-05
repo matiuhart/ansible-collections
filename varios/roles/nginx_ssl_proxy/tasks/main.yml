@@ -11,6 +11,11 @@
       - python3-certbot-nginx
     state: present
   
+- name: Applying nginx.conf configurations 
+  template:
+    src: nginx.conf.j2
+    dest:  "/etc/nginx/nginx.conf"
+
 - name: Applying config for sites with https enabled using letsencrypt
   block:
   - name: Creating base nginx config site for get new cert
