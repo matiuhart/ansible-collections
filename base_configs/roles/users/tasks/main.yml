@@ -3,10 +3,10 @@
 # a grupo docker
 
 # Creaa grupo docker
-- name: Ensure group "docker" exists
-  ansible.builtin.group:
-    name: docker
-    state: present
+# - name: Ensure group "docker" exists
+#   ansible.builtin.group:
+#     name: docker
+#     state: present
     
 - name: "Crea cuentas de usuarios"
   user:
