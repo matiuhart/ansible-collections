@@ -27,7 +27,7 @@
 - name: "Copia authorized keys"
   authorized_key:
     user: "{{ item.username }}"
-    key: "{{ lookup('file', '{{ inventory_dir }}/files/ssh/pub_keys/'+ item.username + '.pub') }}"
+    key: "{{ lookup('file', inventory_dir + '/files/ssh/pub_keys/' + item.username + '.pub') }}"
   with_items: "{{ users }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
