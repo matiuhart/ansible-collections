@@ -7,4 +7,6 @@ organization_name: "mtu-it"
 organizationalUnitName: "devops"
 ca_certs_base_dir: "/files/CA"
 ca_passphrase: "d0nt4get"
+ca_key: ca.key
+ca_cert: ca.pem
 common_name: "mtu-it selfsigned CA"

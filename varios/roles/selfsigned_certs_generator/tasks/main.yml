@@ -6,10 +6,11 @@
   file:
     path: "{{ ca_certs_base_dir }}"
     state: directory
-
+# TODO
+# Chequear si los archivos de ca existen, si existen saltear los pasos de generacion de ca
 - name: Creating private key with password protection
   community.crypto.openssl_privatekey:
-    path: "{{ ca_certs_base_dir }}/ca.key"
+    path: "{{ ca_certs_base_dir }}/{{ ca_key }}"
     passphrase: "{{ ca_passphrase }}"
     cipher: auto
   no_log: true
@@ -17,7 +18,7 @@
 - name: Creating certificate signing request (CSR) for CA certificate
   community.crypto.openssl_csr:
     path: "{{ ca_certs_base_dir }}/ca.csr"
-    privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    privatekey_path: "{{ ca_certs_base_dir }}/{{ ca_key }}"
     privatekey_passphrase: "{{ ca_passphrase }}"
     country_name: "{{ country_name }}"
     email_address: "{{ email_address }}"
@@ -37,9 +38,9 @@
 
 - name: Creating self-signed CA certificate from CSR
   community.crypto.x509_certificate:
-    path: "{{ ca_certs_base_dir }}/ca.pem"
+    path: "{{ ca_certs_base_dir }}/{{ ca_cert }}"
     csr_path: "{{ ca_certs_base_dir }}/ca.csr"
-    privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    privatekey_path: "{{ ca_certs_base_dir }}/{{ ca_key }}"
     privatekey_passphrase: "{{ ca_passphrase }}"
     provider: selfsigned
     ownca_not_after: +3650d
@@ -69,8 +70,8 @@
     path: "{{ ca_certs_base_dir }}/{{ item }}.pem"
     csr_path: "{{ ca_certs_base_dir }}/{{ item }}.csr"
     privatekey_path: "{{ ca_certs_base_dir }}/{{ item }}.key"
-    ownca_path: "{{ ca_certs_base_dir }}/ca.pem"
-    ownca_privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    ownca_path: "{{ ca_certs_base_dir }}/{{ ca_cert }}"
+    ownca_privatekey_path: "{{ ca_certs_base_dir }}/{{ ca_key }}"
     ownca_privatekey_passphrase: "{{ ca_passphrase }}"
     ownca_not_after: +3650d
     ownca_not_before: "-1d"
