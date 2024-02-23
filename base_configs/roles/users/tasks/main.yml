@@ -1,37 +1,34 @@
 ---
-# TODO chequear si docker está instalado y unir usuarios de norber, diego, matias y deployment
-# a grupo docker
-
 # Creaa grupo docker
 # - name: Ensure group "docker" exists
 #   ansible.builtin.group:
 #     name: docker
 #     state: present
     
-- name: "Crea cuentas de usuarios"
+- name: "Creating user accounts"
   user:
     name: "{{ item.username }}"
-    password: "{{ item.password }}"
+    password: "{{ item.password | default '*'}}"
     groups: "{{ item.groups }}"
     state: "present"
     shell: "/bin/bash"
   with_items: "{{ users }}"
 
-- name: "Borra cuentas en remove_users"
+- name: "Removing users"
   user:
     name: "{{ item }}"
     state: "absent"
   with_items: "{{ remove_users }}"
   when: remove_users|bool
 
-- name: "Copia authorized keys"
+- name: "Copying authorized keys"
   authorized_key:
     user: "{{ item.username }}"
-    key: "{{ lookup('file', inventory_dir + '/files/ssh/pub_keys/' + item.username + '.pub') }}"
+    key: "{{ lookup('file', pub_keys_path + '/' + item.username + '.pub') }}"
   with_items: "{{ users }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
-- name: "Permite sudo sin pass de admins"
+- name: "Allowing sudo wothout pass for admin users"
   lineinfile:
     dest: "/etc/sudoers"
     state: "present"

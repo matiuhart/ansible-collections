@@ -6,7 +6,7 @@
 
 - name: Configuring Timezone
   timezone:
-    name: America/Argentina/Buenos_Aires  
+    name: "{{ time_zone }} "
 
 - name: Only run "update_cache=yes" if the last one is more than 3600 seconds ago
   ansible.builtin.apt:
