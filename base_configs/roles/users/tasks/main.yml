@@ -8,7 +8,7 @@
 - name: "Creating user accounts"
   user:
     name: "{{ item.username }}"
-    password: "{{ item.password }}| default '*'"
+    password: "{{ item.password }}"
     groups: "{{ item.groups }}"
     state: "present"
     shell: "/bin/bash"
@@ -28,7 +28,7 @@
   with_items: "{{ users }}"
   ignore_errors: "{{ ansible_check_mode }}"
 
-- name: "Allowing sudo wothout pass for admin users"
+- name: "Allowing sudo without pass for admin users"
   lineinfile:
     dest: "/etc/sudoers"
     state: "present"
