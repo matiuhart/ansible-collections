@@ -1,0 +1,79 @@
+---
+#
+## CA Generation
+#
+- name: Creating CA directory
+  file:
+    path: "{{ ca_certs_base_dir }}"
+    state: directory
+
+- name: Creating private key with password protection
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_certs_base_dir }}/ca.key"
+    passphrase: "{{ ca_passphrase }}"
+    cipher: auto
+  no_log: true
+
+- name: Creating certificate signing request (CSR) for CA certificate
+  community.crypto.openssl_csr:
+    path: "{{ ca_certs_base_dir }}/ca.csr"
+    privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    privatekey_passphrase: "{{ ca_passphrase }}"
+    country_name: "{{ country_name }}"
+    email_address: "{{ email_address }}"
+    locality_name: "{{ localityName }}"
+    organization_name: "{{ organization_name }}"
+    organizational_unit_name: "{{ organizationalUnitName }}"
+    common_name: "{{ common_name }}"
+    use_common_name_for_san: false
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: true
+    key_usage:
+      - keyCertSign
+    key_usage_critical: true
+    return_content: true
+  register: ca_csr
+
+- name: Creating self-signed CA certificate from CSR
+  community.crypto.x509_certificate:
+    path: "{{ ca_certs_base_dir }}/ca.pem"
+    csr_path: "{{ ca_certs_base_dir }}/ca.csr"
+    privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    privatekey_passphrase: "{{ ca_passphrase }}"
+    provider: selfsigned
+    ownca_not_after: +3650d
+    ownca_not_before: "-1d"
+#
+## Server certs Generation
+#
+- name: Creating private keys for new servers certificates
+  become: false
+  community.crypto.openssl_privatekey:
+    path: "{{ ca_certs_base_dir }}/{{ item }}.key"
+  loop: "{{ server_hostnames }}"
+  no_log: true
+
+- name: Creating certificate signing request (CSR) for new certificate
+  community.crypto.openssl_csr:
+    path: "{{ ca_certs_base_dir }}/{{ item }}.csr"
+    privatekey_path: "{{ ca_certs_base_dir }}/{{ item }}.key"
+    common_name: "{{ item }}"
+    subject_alt_name:
+      - "DNS:{{ item }}"
+  loop: "{{ server_hostnames }}"
+
+- name: Signing server certificates with our CA
+  become: false
+  community.crypto.x509_certificate:
+    path: "{{ ca_certs_base_dir }}/{{ item }}.pem"
+    csr_path: "{{ ca_certs_base_dir }}/{{ item }}.csr"
+    privatekey_path: "{{ ca_certs_base_dir }}/{{ item }}.key"
+    ownca_path: "{{ ca_certs_base_dir }}/ca.pem"
+    ownca_privatekey_path: "{{ ca_certs_base_dir }}/ca.key"
+    ownca_privatekey_passphrase: "{{ ca_passphrase }}"
+    ownca_not_after: +3650d
+    ownca_not_before: "-1d"
+    provider: ownca
+  loop: "{{ server_hostnames }}"
+  no_log: true
