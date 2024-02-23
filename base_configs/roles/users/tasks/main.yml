@@ -8,7 +8,7 @@
 - name: "Creating user accounts"
   user:
     name: "{{ item.username }}"
-    password: "{{ item.password }}"
+    password: "{{ item.password | default('*')}}"
     groups: "{{ item.groups }}"
     state: "present"
     shell: "/bin/bash"
