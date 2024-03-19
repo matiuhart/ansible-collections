@@ -1,0 +1,16 @@
+---
+- name: Creating loki dir
+  file:
+    path: "{{ loki_directory }}"
+    state: directory
+
+- name: Copying Loki deployment files
+  copy:
+    src: loki/
+    dest: "{{ loki_directory }}"
+
+
+- name: Deploying Loki docker container
+  command:
+    cmd: docker-compose up -d
+    chdir: "{{ loki_directory }}"
