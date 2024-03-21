@@ -3,7 +3,7 @@
 ### Variables
 ```
 country_name: "AR"
-localityName: "La Plata"
+locality_name: "La Plata"
 stateOrProvinceName: BS.AS
 email_address: "dummy@email.com"
 organization_name: "mtu-it"
