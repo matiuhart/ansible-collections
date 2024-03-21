@@ -5,11 +5,11 @@
 country_name: "AR"
 localityName: "La Plata"
 stateOrProvinceName: BS.AS
-email_address: "dummy@mtu-it.com.ar"
+email_address: "dummy@email.com"
 organization_name: "mtu-it"
 organizationalUnitName: "devops"
 ca_certs_base_dir: "/files/CA"
-ca_passphrase: "d0nt4get"
+ca_passphrase: "superpass"
 common_name: "mtu-it selfsigned CA"
 
 server_hostnames:
