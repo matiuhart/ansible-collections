@@ -14,7 +14,6 @@
     - name: Generating base admin token
       set_fact:
         vw_admin_generated_token: "{{ lookup('community.general.random_string', length=64, min_lower=1, min_upper=1, min_numeric=1, special=false) }}"
-        #vw_admin_generated_token: "{{ lookup('community.general.random_string', length=64, min_lower=1, min_upper=1, min_numeric=1, min_special=1, override_special='-_=+!#$()[]') }}"
 
     - name: Verify the generate password
       debug:
@@ -27,7 +26,7 @@
       when: vw_admin_generated_token
 
     - name: Saving argon2 admin token
-      # The $ generated in hash by argon2 has must be scaped by $$
+      # The $ generated in hash by argon2 must be scaped by $$
       set_fact:
         vw_argon2id_generated_token: "{{ argon2hash.stdout | replace('$', '$$') }}" 
       when: vw_admin_generated_token
@@ -60,10 +59,9 @@
     mode: '600'
     owner: root
   register: docker_compose_file
-  changed_when: docker_compose_file.changed
 
 - name: Deploying vaultwarden docker
-  shell: "docker-compose up -d"
-  args:
-    chdir: "{{ vw_install_path }}"
+  docker_compose:
+    project_src: "{{ vw_install_path }}/"
+    state: present
   when: docker_compose_file.changed
