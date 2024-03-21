@@ -1,7 +1,9 @@
-Role Name
+Vaultwarden Ansible Role
 =========
 
-This role deploys the Vaultwarden password manager solution of dani-garcia
+This role deploys a docker container with the Vaultwarden password manager solution of dani-garcia. Includes the argon2 admin token generation
+
+To have more detailed info about the Vaultwarden project you can go to:
 
 https://github.com/dani-garcia/vaultwarden
 
@@ -9,6 +11,8 @@ Requirements
 ------------
 
 As base requirements you need docker, docker-compose installed and some reverse proxy with SSL enabled forwarding the traffic to the container port (5001)
+
+To deploy an SSL reverse proxy you can use this Ansible role https://github.com/matiuhart/ansible-collections/blob/master/varios/roles/nginx_ssl_proxy/README.md
 
 Role Variables
 --------------
@@ -31,8 +35,8 @@ In this example, I have defined the `vw_admin_token` variable with an argon2 has
 Also, if you desire it can put any value of argon2 hash or in text plane  format
 
 ```
-- name: Administrar instancia test
-  hosts: ansible-tests
+- name: Managing my super server
+  hosts: superserver
   become: true
   connection: ssh
   gather_facts: true
@@ -50,7 +54,7 @@ Also, if you desire it can put any value of argon2 hash or in text plane  format
     - vaultwarden
 ```
 
-After first run I copied the argon2 hash from `{{ vw_install_path }}/vw_admin_auto_generated_token.txt` and I have added this variable to the playbook:
+After the first run I copied the argon2 hash from `{{ vw_install_path }}/vw_admin_auto_generated_token.txt` and I have added this variable to the playbook:
 `vw_admin_token: "$$argon2id$$v=19$$m=65540,t=3,p=4$$JChvcGVuc3NsIHJhbmQgLWJhc2U2NCAzMik$$A69g5MLOxBDB6HLiEH6u4y1LxMugXs66wdoqkb59ASk" `
 
 
