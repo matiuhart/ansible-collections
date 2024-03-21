@@ -1,14 +1,14 @@
 Role Name
 =========
 
-This role deploy the vaultwarden password manager solution of dani-garcia
+This role deploys the Vaultwarden password manager solution of dani-garcia
 
 https://github.com/dani-garcia/vaultwarden
 
 Requirements
 ------------
 
-As base requeriments you need docker, docker-compose instaled and some reverse proxy with ssl enabled forwarding the traffic to the container port (5001)
+As base requirements you need docker, docker-compose installed and some reverse proxy with SSL enabled forwarding the traffic to the container port (5001)
 
 Role Variables
 --------------
