@@ -1,1 +1,7 @@
 ---
+https: true
+aditional_vhost_names: 
+proxy_pass_host: 127.0.0.1
+proxy_pass_port: 
+extra_http_local_root_site_configs:
+extra_https_local_root_site_configs: 
