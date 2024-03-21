@@ -1,0 +1,69 @@
+---
+- name: Install dependencies
+  apt:
+    name:
+      - argon2
+
+- name: Creating install path
+  file:
+    path: "{{ vw_install_path }}"
+    state: directory
+    
+- name: Generating first time admin token
+  block:
+    - name: Generating base admin token
+      set_fact:
+        vw_admin_generated_token: "{{ lookup('community.general.random_string', length=64, min_lower=1, min_upper=1, min_numeric=1, special=false) }}"
+        #vw_admin_generated_token: "{{ lookup('community.general.random_string', length=64, min_lower=1, min_upper=1, min_numeric=1, min_special=1, override_special='-_=+!#$()[]') }}"
+
+    - name: Verify the generate password
+      debug:
+        var: vw_admin_generated_token
+      when: vw_admin_generated_token is defined
+
+    - name: Generating argon2 admin token hash
+      shell: "echo -n '{{ vw_admin_generated_token }}' | argon2 '$(openssl rand -base64 32)' -e -id -k 65540 -t 3 -p 4"
+      register: argon2hash
+      when: vw_admin_generated_token
+
+    - name: Saving argon2 admin token
+      # The $ generated in hash by argon2 has must be scaped by $$
+      set_fact:
+        vw_argon2id_generated_token: "{{ argon2hash.stdout | replace('$', '$$') }}" 
+      when: vw_admin_generated_token
+
+    - name: Verify the argon2 generated password
+      debug:
+        var: vw_argon2id_generated_token
+      when: vw_admin_generated_token
+
+    - name: Generating passwords files
+      copy:
+        dest: "{{ vw_install_path }}/vw_admin_auto_generated_token.txt"
+        mode: '600'
+        owner: root
+        content: |
+          ATTENTION!! SAVE THIS FILE IN A SECURE PLACE AND DELETE IT
+
+          Admin original token: {{ vw_admin_generated_token }}
+          Admin Argon2 hashed token: {{ vw_argon2id_generated_token }}
+  
+    - name: Set the variable vw_admin_token
+      set_fact:
+        vw_admin_token: "{{ vw_argon2id_generated_token }}"
+  when: not vw_admin_token or vw_admin_token is not defined
+
+- name: Copying docker-compose.yaml file
+  template:
+    src: docker-compose.yaml.j2
+    dest: "{{ vw_install_path }}/docker-compose.yaml"
+    mode: '600'
+    owner: root
+  register: docker_compose_file
+  changed_when: docker_compose_file.changed
+
+- name: Deploying vaultwarden docker
+  shell: "docker-compose up -d"
+  args:
+    chdir: "{{ vw_install_path }}"
+  when: docker_compose_file.changed

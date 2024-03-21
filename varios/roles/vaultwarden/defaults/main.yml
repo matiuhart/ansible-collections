@@ -1,0 +1,10 @@
+---
+vw_install_path: "/opt/vaultwarden"
+vw_admin_token: ""
+vw_smtp_host: ""
+vw_smtp_port: "465"
+vw_smtp_security: "force_tls"
+vw_smtp_from_name: ""
+vw_smtp_from_email: ""
+vw_smtp_from_user: ""
+vw_smtp_from_user_password: ""

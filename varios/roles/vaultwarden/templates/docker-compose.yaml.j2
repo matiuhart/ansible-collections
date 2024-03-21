@@ -1,0 +1,50 @@
+version: '3'
+
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest 
+    container_name: vaultwarden
+    ports:
+      - "5001:80"
+      - "3012:3012"
+    volumes:
+      - ./data/bitwarden:/data
+    restart: always 
+    environment:
+      WEBSOCKET_ENABLED: 'true'
+      SIGNUPS_ALLOWED: 'false'
+      ADMIN_TOKEN: "{{ vw_admin_token }}"
+      ORG_GROUPS_ENABLED: 'true'
+      SMTP_HOST: "{{ vw_smtp_host }}"
+      SMTP_PORT: "{{ vw_smtp_port }}"
+      SMTP_SECURITY: "{{ vw_smtp_security }}"
+      SMTP_FROM_NAME: "{{ vw_smtp_from_name }}"
+      SMTP_FROM: "{{ vw_smtp_from_email }}"
+      SMTP_USERNAME: "{{ vw_smtp_from_user }}"
+      SMTP_PASSWORD: "{{ vw_smtp_from_user_password }}"
+      LOG_FILE: '/data/vaultwarden.log'
+      USE_SYSLOG: 'true'
+      EXTENDED_LOGGING: 'false'
+ 
+  vaultwarden_backup:
+    image: bruceforce/vaultwarden-backup:latest 
+    container_name: vaultwarden_backup
+    restart: unless-stopped
+    depends_on:
+      - vaultwarden
+    volumes:
+      - ./data/bitwarden:/data
+      - /opt/Bitwarden-Backup:/backup
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - DB_FILE=/data/db.sqlite3
+      - BACKUP_FILE=/backup/backup.sqlite3
+      - BACKUP_FILE_PERMISSIONS=700
+      - CRON_TIME=0 1 * * *
+      - TIMESTAMP=false
+      - UID=0
+      - GID=0
+
+# Generate argon2id
+# https://forum.yunohost.org/t/hashed-admin-token-in-vaultwarden-howto/25957
