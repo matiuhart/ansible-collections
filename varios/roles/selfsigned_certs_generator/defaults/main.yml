@@ -1,6 +1,6 @@
 ---
 country_name: "AR"
-localityName: "La Plata"
+locality_name: "La Plata"
 stateOrProvinceName: BS.AS
 email_address: "dummy@mtu-it.com.ar"
 organization_name: "mtu-it"
