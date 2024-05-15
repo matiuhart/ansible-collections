@@ -22,10 +22,21 @@
     path: "{{ loki_installation_path }}"
     state: directory
 
-- name: Copying config files
+- name: Check if nginx is installed
+  set_fact: 
+    nginx_installed: true
+  when: "'nginx' in ansible_facts.packages"
+
+- name: Copying Loki config file
   copy:
-    src: config/
-    dest: "{{ loki_installation_path }}/"
+    src: config/loki-config.yaml
+    dest: "{{ loki_installation_path }}/loki-config.yaml"
+
+- name: Copying promtail config file
+  template:
+    src: promtail-config.yaml.j2
+    dest: "{{ loki_installation_path }}/promtail-config.yaml"
+  register: promtail_config_file
 
 - name: Copying docker-compose.yaml file
   template:
@@ -39,5 +50,5 @@
   docker_compose:
     project_src: "{{ loki_installation_path }}/"
     state: present
-  when: docker_compose_file.changed
+  when: docker_compose_file.changed or promtail_config_file.changed
   ignore_errors: "{{ ansible_check_mode }}"

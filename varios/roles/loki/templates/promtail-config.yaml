@@ -14,5 +14,14 @@ scrape_configs:
   - targets:
       - localhost
     labels:
-      job: varlogs
+      job: syslogs
       __path__: /var/log/*log
+{% if nginx_installed %}
+- job_name: nginx
+  static_configs:
+  - targets:
+      - localhost
+    labels:
+      job: nginx
+      __path__: /var/log/nginx/*log
+{% endif %}
