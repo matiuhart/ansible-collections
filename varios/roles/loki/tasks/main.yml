@@ -22,6 +22,10 @@
     path: "{{ loki_installation_path }}"
     state: directory
 
+- name: Gatherig the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
 - name: Check if nginx is installed
   set_fact: 
     nginx_installed: true
