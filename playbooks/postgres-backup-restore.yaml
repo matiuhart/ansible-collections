@@ -1,0 +1,91 @@
+---
+# This playbook creates a Postgres db dump of requeried database from source server and restore it on destination server. 
+# If you provides user and password for destinantion server, will create the it (if doesn't exists) and give all privileges 
+# over the restored database, if the user exists will give all privileges over the db.
+# Requeriments:
+#  - Both, source and destination server must accept external connections.
+- hosts: localhost
+  gather_facts: true
+  vars:
+    # Source server values
+    pg_server_src: "192.168.0.10"
+    pg_server_src_port: "5433" # (not requeried) default vale: 5432
+    pg_user_src: "admin"
+    pg_user_password_src: "cfYE8ch2S8JQ9dXczgfM"
+    pg_db_name_src: "cas"
+    
+    # Destination server values
+    pg_server_dest: "192.168.0.10"
+    #pg_server_dest_port: "" # (not requeried) default vale: 5432
+    pg_admin_user_dest: "admin"
+    pg_admin_password_dest: "cfYE8ch2S8JQ9dXczgfM"
+    
+    pg_user_dest: "roberto" # (not requeried) If the user doesn't exists will create it
+    pg_user_password_dest: "mistornja" # (not requeried)
+    pg_db_name_dest: "mi_otra_db" # (not requeried) If you doesn't define it will take the origin database name as default
+    
+  pre_tasks:
+    - name: Installing package psycopg2 using apt
+      become: true
+      apt:
+        name: python3-psycopg2
+      when: ansible_os_family == "Debian"
+
+    - name: Install psycopg2 on macOS using Homebrew
+      become: yes
+      command: brew install psycopg2
+      when: ansible_os_family == "Darwin"
+
+  tasks:
+    - name: "Dumping src database"
+      become_user: postgres
+      postgresql_db:
+        state: dump
+        login_host: "{{ pg_server_src }}"
+        login_port: "{{ pg_server_src_port | default('5432') }}"
+        login_user: "{{ pg_user_src }}"
+        login_password: "{{ pg_user_password_src }}"
+        name: "{{ pg_db_name_src }}"
+        target: "/tmp/{{ pg_server_src }}-{{ pg_db_name_src }}.dump.gz"
+
+    - name: Creating new database in destination
+      postgresql_db:
+        db: "{{ pg_db_name_dest | default(pg_db_name_src) }}"
+        login_host: "{{ pg_server_dest }}"
+        login_port: "{{ pg_server_dest_port | default(5432)| int }}"
+        login_user: "{{ pg_admin_user_dest }}"
+        login_password: "{{ pg_admin_password_dest }}"
+        state: present
+
+    - name: "Restoring database in destination server"
+      postgresql_db:
+        state: restore
+        name: "{{ pg_db_name_dest | default(pg_db_name_src) }}"
+        login_host: "{{ pg_server_dest }}"
+        login_port: "{{ pg_server_dest_port | default('5432') }}"
+        login_user: "{{ pg_admin_user_dest }}"
+        login_password: "{{ pg_admin_password_dest }}"
+        target: "/tmp/{{ pg_server_src }}-{{ pg_db_name_src }}.dump.gz"
+    
+    - name: "Creating destination user"
+      postgresql_user:
+        db: "{{ pg_db_name_dest | default(pg_db_name_src) }}"
+        login_host: "{{ pg_server_dest }}"
+        login_port: "{{ pg_server_dest_port | default('5432') }}"
+        login_user: "{{ pg_admin_user_dest }}"
+        login_password: "{{ pg_admin_password_dest }}"
+        name: "{{ pg_user_dest }}"
+        password: "{{ pg_user_password_dest }}"
+      when: ((pg_user_dest is defined) and (pg_user_dest|length > 0)) and ((pg_user_password_dest is defined) and (pg_user_password_dest|length > 0))
+
+    - name: Adding privileges to destination user in restored database
+      postgresql_privs:
+        db: "{{ pg_db_name_dest | default(pg_db_name_src) }}"
+        login_host: "{{ pg_server_dest }}"
+        login_port: "{{ pg_server_dest_port | default('5432') }}"
+        login_user: "{{ pg_admin_user_dest }}"
+        login_password: "{{ pg_admin_password_dest }}"
+        privs: ALL
+        type: database
+        role: "{{ pg_user_dest }}"
+      when: (pg_user_dest is defined) and (pg_user_dest|length > 0)

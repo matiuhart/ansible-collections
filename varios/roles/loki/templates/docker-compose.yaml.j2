@@ -1,13 +1,11 @@
-version: "3"
-
 networks:
   loki:
 
 services:
   loki:
-    image: grafana/loki:2.9.4
+    image: grafana/loki:3.0.0
     ports:
-      - "3100:3100"
+      - "{{ loki_external_port }}:3100"
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - loki
@@ -15,7 +13,7 @@ services:
       - ./loki-config.yaml:/etc/loki/local-config.yaml
 
   promtail:
-    image: grafana/promtail:2.9.4
+    image: grafana/promtail:3.0.0
     volumes:
       - /var/log:/var/log
       - ./promtail-config.yaml:/etc/promtail/config.yml
@@ -26,8 +24,8 @@ services:
   grafana:
     environment:
       - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD={{ loki_grafana_admin_password }}
     entrypoint:
       - sh
       - -euc
@@ -49,6 +47,6 @@ services:
         /run.sh
     image: grafana/grafana:latest
     ports:
-      - "3030:3000"
+      - "{{ loki_grafana_port }}:3000"
     networks:
       - loki

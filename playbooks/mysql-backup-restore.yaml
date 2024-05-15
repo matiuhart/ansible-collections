@@ -1,0 +1,53 @@
+---
+- name: Running Mysql dump
+  hosts: 
+  gather_facts: true
+  vars:
+    db_server: ""
+    db_name: ""
+    db_user: ""
+    db_password: ""
+    dump_path: ""
+
+  tasks:
+    - name: Backuping Database
+      mysql_db:
+        name: wordpress_db
+        state: dump
+        target: "./{{ db_server }}_backup.sql"
+        login_host: "{{ db_server }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+      when: db_server is not == "localhost" or db_server is not == "127.0.0.1"
+      delegate_to: localhost
+
+    - name: Backuping Database
+      mysql_db:
+        name: wordpress_db
+        state: dump
+        target: "/tmp/{{ db_server }}_backup.sql"
+        login_host: "{{ db_server }}"
+        login_user: "{{ db_user }}"
+        login_password: "{{ db_password }}"
+      when: db_server is == "localhost" or db_server is == "127.0.0.1"
+
+    - name: "Downloading dump to local"
+      fetch: 
+        src: "/tmp/{{ db_server }}_backup.sql"
+        dest: .
+        flat: yes
+      when: db_server is == "localhost" or db_server is == "127.0.0.1"
+      
+    - name: start the importing 
+      mysql_db:
+        name: Restaurar Base
+        state: import
+        target: /opt/backup.sql"
+        login_host: 192.168.10.2
+        login_user: root
+        login_password: 'Password'
+      when: "{{ inventory_hostname == 'server_db_2' }}"
+
+    - name: "Copiando dump desde equipo local Ansible a servirdor"
+      copy: src=buffer/app01-to-app02.jar dest=/tmp/
+      when: "{{ inventory_hostname == 'server_db_2' }}"

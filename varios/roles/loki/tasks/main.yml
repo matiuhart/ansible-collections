@@ -1,16 +1,43 @@
 ---
-- name: Creating loki dir
+- name: Installing python docker modules
+  pip:
+    name:
+      - docker==4.4.4
+      - docker-compose
+    
+- name: Installing loki logging docker plugin
+  community.docker.docker_plugin:
+    plugin_name: grafana/loki-docker-driver:latest
+    alias: loki
+    state: present
+
+- name: Adding host entry for loki endpoint
+  lineinfile:
+    dest: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }} loki"
+    state: present
+
+- name: Create loki docker folder
   file:
-    path: "{{ loki_directory }}"
+    path: "{{ loki_installation_path }}"
     state: directory
 
-- name: Copying Loki deployment files
+- name: Copying config files
   copy:
-    src: loki/
-    dest: "{{ loki_directory }}"
+    src: config/
+    dest: "{{ loki_installation_path }}/"
 
+- name: Copying docker-compose.yaml file
+  template:
+    src: docker-compose.yaml.j2
+    dest: "{{ loki_installation_path }}/docker-compose.yaml"
+    mode: '600'
+    owner: root
+  register: docker_compose_file
 
 - name: Deploying Loki docker container
-  command:
-    cmd: docker-compose up -d
-    chdir: "{{ loki_directory }}"
+  docker_compose:
+    project_src: "{{ loki_installation_path }}/"
+    state: present
+  when: docker_compose_file.changed
+  ignore_errors: "{{ ansible_check_mode }}"

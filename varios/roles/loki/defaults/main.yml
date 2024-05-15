@@ -1,3 +1,7 @@
 ---
-loki_directory: "/opt/loki"
+loki_installation_path: /opt/loki
+loki_grafana_port: 3000
+loki_external_port: 3100
+loki_grafana_admin_password: YourAdminPassword
+
 
