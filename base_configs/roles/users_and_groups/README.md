@@ -1,3 +1,5 @@
+You need to define variables at three scope variables of ansible host_vars, group_vars.all(for global users) and finally group_vars.hosts_group(for group users)
+
 ## Variable definition for global users (all variable group scope)
 
 ```
