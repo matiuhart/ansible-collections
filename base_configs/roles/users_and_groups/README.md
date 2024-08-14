@@ -1,38 +1,73 @@
-Role Name
-=========
+## Variable definition for global users (all variable group scope)
 
-A brief description of the role goes here.
+```
+global_users:
+  user_1:
+    groups: ["my_global_group_1","my_global_group_2", "sudo"]
+  user_2:
+    groups: ["my_group_2"]
 
-Requirements
-------------
+global_groups:
+  - my_global_group_1
+  - my_global_group_2
+```
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
 
-Role Variables
---------------
+## Variable definition for group server users 
+group_vars/all.yaml file
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+```
+group_users:
+  user_3:
+    groups: ["my_group_groups_1", "my_group_groups_"]
 
-Dependencies
-------------
+group_groups:
+  - my_group_groups_1
+  - my_group_groups_2
+```
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+## Variable definition for host users
+host_vars/my_ansible_hostname.yaml file
 
-Example Playbook
-----------------
+```
+host_users:
+  user_4:
+    groups: ["sudo"]
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+host_groups: {}
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+ ```
 
-License
--------
 
-BSD
+## Variable definition for users info
 
-Author Information
-------------------
+user_info:
+  user_1:
+    shell: /bin/bash
+    uid: 10100
+    ssh_keys: []
+  user_2:
+    shell: /bin/bash
+    uid: 10101
+    ssh_keys:
+      - ssh-rsa +5CSRh8rtGzgnOUthsHDfZLFiPcMfwNcGzi/BcSb3WAPJkLI+rdo8OtoSWRl8sEU3ibzqhCUS9eKho296dvHT82pIU2CDKBFoYlMsny/BrnZzK1CncMoibPZrSS3cDmBP7BQqV3amhQEDBpoFLWSbawXcueAxBXX2QuMCpwksqrq9DBr6LwlxmywMZmyJP9rwF9jBJcr2NG7yH8A51dDnR7LEWoTyf39GJ3OEdHS6wpYHw/fWvWKaKFn0siY1Z6RhiVjkbXJOLJ9wd9n6uPrGA1ehCASQQsMRdk6QPXnRNGc=
+      - ssh-rsa ASvycMYYeKRtVoXIpKZuEGfk5JPUceMFp3vWo1RDuVvOWrBrXW1QJcTOwtO3WpJxlVxkN6lFme+qjxOBM0HdQ7S+oavqnyzKhwbt9b+5CSRh8rtGzgnOUthsHDfZLFiPcMfwNcGzi/BcSb3WAPJkLI+rdo8OtoSWRl8sEU3ibzqhCUS9eKho296dvHT82pIU2CDKBFoYlMsny/BrnZzK1CncMoibPZrSS3cDmBP7BQqV3amhQEDBpoFLWSbawXcueAxBXX2QuMCpwksqrq9DBr6LwlxmywMZmyJP9rwF9jBJcr2NG7yH8A51dDnR7LEWoTyf39GJ3OEdHS6wpYHw/fWvWKaKFn0siY1Z6RhiVjkbXJOLJ9wd9n6uPrGA1ehCASQQsMRdk6QPXnRNGc=
+  user_3:
+    shell: /bin/bash
+    uid: 10102
+    ssh_keys: []
+  user_4:
+    shell: /bin/bash
+    uid: 10103
+    ssh_keys: []
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+## Variable definition for groups info
+group_info:
+  my_global_group_1:
+    gid: 1111
+  my_global_group_1:
+    gid: 1112
+  my_group_groups_1:
+    gid: 1113
+  my_group_groups_2:
+    gid: 1114
