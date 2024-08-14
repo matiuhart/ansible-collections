@@ -1,0 +1,8 @@
+global_users: {}
+group_users: {}
+host_users: {}
+global_groups: []
+group_groups: []
+host_groups: []
+user_info: {}
+group_info: {}

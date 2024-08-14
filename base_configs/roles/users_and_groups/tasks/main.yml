@@ -1,0 +1,78 @@
+---
+- name: Merging all user scope variables
+  set_fact:
+    all_users: |
+      {% set users = {} %}
+      {% for user_dict in [global_users, group_users, host_users] %}
+        {% for username, groups_info in user_dict.items() %}
+          {% set user_detail = user_info.get(username, {}) %}
+          {% set existing_groups = users.get(username, {}).get('groups', []) %}
+          {% set merged_groups = existing_groups + groups_info.groups %}
+          {% set _ = users.update({
+            username: {
+              'uid': user_detail.uid | default('No especificado'),
+              'shell': user_detail.shell | default('/bin/bash'),
+              'groups': merged_groups | unique,
+              'ssh_keys': user_detail.ssh_keys | default([])
+            }
+          }) %}
+        {% endfor %}
+      {% endfor %}
+      {{ users }}
+
+- name: Merging all group scope variables
+  set_fact:
+    all_groups: |
+      {% set groups = {} %}
+      {% for group_list in [global_groups, group_groups, host_groups] %}
+        {% for group_name in group_list %}
+          {% set group_detail = group_info.get(group_name, {}) %}
+          {% set _ = groups.update({
+            group_name: {
+              'gid': group_detail.gid | default('No especificado')
+            }
+          }) %}
+        {% endfor %}
+      {% endfor %}
+      {{ groups }}
+
+- name: Converting merged users to dict
+  set_fact:
+    all_users_dict: "{{ all_users | from_yaml }}"
+
+- name: Converting merged groups to dict
+  set_fact:
+    all_groups_dict: "{{ all_groups | from_yaml }}"
+
+- name: Creating Linux groups
+  group:
+    name: "{{ item.key }}"
+    gid: "{{ item.value.gid }}"
+    state: present
+  loop: "{{ all_groups_dict | dict2items }}"
+
+- name: Creating Linux users
+  user:
+    name: "{{ item.key }}"
+    uid: "{{ item.value.uid }}"
+    shell: "{{ item.value.shell }}"
+    groups: "{{ item.value.groups | join(',') }}"
+    state: present
+  loop: "{{ all_users_dict | dict2items }}"
+
+- name: Adding ssh keys to created users
+  authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ item.value.ssh_keys | first }}"
+    state: present
+  loop: "{{ all_users_dict | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.value.ssh_keys is defined and item.value.ssh_keys | length > 0
+
+- name: "Allowing sudo without password ask"
+  lineinfile:
+    dest: "/etc/sudoers"
+    state: "present"
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
