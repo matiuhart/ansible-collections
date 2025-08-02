@@ -1,0 +1,36 @@
+---
+- name: Instalar IIS y herramientas de gestión
+  win_feature:
+    name:
+      - Web-Server
+      - Web-Mgmt-Console
+    state: present
+
+- name: Reiniciar servidor si es necesario
+  win_reboot:
+    reboot_timeout: 600
+  when: ansible_reboot_pending | default(false)
+
+- name: Verificar que IIS esté corriendo
+  win_service:
+    name: W3SVC
+    state: started
+    start_mode: auto
+
+- name: Verificar que el servicio de publicación web esté corriendo
+  win_service:
+    name: WAS
+    state: started
+    start_mode: auto
+
+- name: Crear directorio para sitios web
+  win_file:
+    path: "{{ iis_apps_path }}"
+    state: directory
+
+- name: Configurar pool de aplicaciones por defecto para .NET
+  win_iis_webapppool:
+    name: DefaultAppPool
+    attributes:
+      processModel.identityType: ApplicationPoolIdentity
+      managedRuntimeVersion: v4.0

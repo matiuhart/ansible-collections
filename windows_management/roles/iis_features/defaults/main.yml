@@ -1,0 +1,20 @@
+iis_features:
+  - IIS-WebServerRole
+  - IIS-WebServer
+  - IIS-CommonHttpFeatures
+  - IIS-HttpErrors
+  - IIS-HttpRedirect
+  - IIS-ApplicationDevelopment
+  - IIS-ASPNET45
+  - IIS-NetFxExtensibility45
+  - IIS-ISAPIExtensions
+  - IIS-ISAPIFilter
+  - IIS-HealthAndDiagnostics
+  - IIS-HttpLogging
+  - IIS-Security
+  - IIS-RequestFiltering
+  - IIS-Performance
+  - IIS-WebServerManagementTools
+  - IIS-ManagementConsole
+  - IIS-IIS6ManagementCompatibility
+  - IIS-Metabase

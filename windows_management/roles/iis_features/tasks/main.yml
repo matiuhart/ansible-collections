@@ -1,0 +1,8 @@
+---
+
+- name: Instalar características completas de IIS
+  win_feature:
+    name: "{{ iis_features }}"
+    state: present
+    include_sub_features: yes
+    restart: yes

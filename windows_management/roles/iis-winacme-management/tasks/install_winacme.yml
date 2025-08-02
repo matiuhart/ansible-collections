@@ -1,0 +1,109 @@
+---
+- name: Verificar si WinAcme ya está instalado
+  win_stat:
+    path: "{{ winacme_path }}\\wacs.exe"
+  register: winacme_installed
+
+- block:
+    - name: Crear directorio para WinAcme
+      win_file:
+        path: "{{ winacme_path }}"
+        state: directory
+
+    - name: Descargar WinAcme
+      win_get_url:
+        url: https://github.com/win-acme/win-acme/releases/latest/download/win-acme.v2.2.9.1701.x64.pluggable.zip
+        dest: "{{ downloads_dir }}\\win-acme.zip"
+        timeout: 300
+
+    - name: Extraer WinAcme
+      win_unzip:
+        src: "{{ downloads_dir }}\\win-acme.zip"
+        dest: "{{ winacme_path }}"
+        creates: "{{ winacme_path }}\\wacs.exe"
+
+    - name: Crear configuración inicial de WinAcme
+      win_copy:
+        content: |
+          {
+            "ClientNames": {
+              "UserAgent": "win-acme/{{ ansible_hostname }}"
+            },
+            "Acme": {
+              "DefaultBaseUri": "https://acme-v02.api.letsencrypt.org/",
+              "PostAsGet": true
+            },
+            "Proxy": {
+              "Url": null,
+              "Username": null,
+              "Password": null
+            },
+            "Cache": {
+              "Path": null,
+              "ReuseDays": null,
+              "DeleteStaleFiles": true
+            },
+            "ScheduledTask": {
+              "RenewalDays": 55,
+              "StartBoundary": "09:00:00",
+              "ExecutionTimeLimit": "02:00:00",
+              "RandomDelay": "00:00:00"
+            },
+            "Notification": {
+              "SmtpServer": null,
+              "SmtpPort": 587,
+              "SmtpUser": null,
+              "SmtpPassword": null,
+              "SmtpSecure": true,
+              "SenderName": null,
+              "SenderAddress": "{{ winacme_email }}",
+              "ReceiverAddresses": ["{{ winacme_email }}"]
+            },
+            "Security": {
+              "EncryptConfig": true,
+              "PrivateKeyExportable": true
+            },
+            "Store": {
+              "CertificateStore": {
+                "DefaultStore": "{{ winacme_store_location }}",
+                "DefaultCspName": null,
+                "DefaultCngName": null,
+                "UseNextGenerationCryptoApi": null
+              }
+            },
+            "Installation": {
+              "DefaultSite": null
+            }
+          }
+        dest: C:\Program Files\win-acme\settings.json
+
+    - name: Agregar WinAcme al PATH del sistema
+      win_path:
+        elements:
+          - C:\Program Files\win-acme
+        state: present
+
+  when: not winacme_installed.stat.exists
+
+- name: Verificar instalación de WinAcme
+  win_shell: |
+    & "C:\Program Files\win-acme\wacs.exe" --version
+  register: winacme_version
+  ignore_errors: true
+
+- name: Crear tarea programada para renovación automática (ejemplo)
+  win_scheduled_task:
+    name: "WinAcme Certificate Renewal"
+    description: "Renovación automática de certificados SSL con WinAcme"
+    actions:
+      - path: C:\Program Files\win-acme\wacs.exe
+        arguments: --renew --baseuri https://acme-v02.api.letsencrypt.org/
+    triggers:
+      - type: daily
+        start_boundary: "2024-01-01T02:00:00"
+        repetition:
+          interval: PT24H
+    username: SYSTEM
+    runlevel: highest
+    state: present
+  ignore_errors: true

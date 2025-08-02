@@ -1,0 +1,10 @@
+- name: Install WinAcme
+  include_tasks: install_winacme.yml
+  when: winacme_install |bool
+
+- name: Execute IIS base Installation
+  include_tasks: install_iis.yml
+
+- name: Manage IIS sites
+  include_tasks: manage_sites.yml
+

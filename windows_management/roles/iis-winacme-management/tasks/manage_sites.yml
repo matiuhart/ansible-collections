@@ -1,0 +1,110 @@
+- name: Lista todos certificados existentes y sus datos
+  community.windows.win_certificate_info:
+    store_name: WebHosting
+  register: CertList
+
+- name: Creando diccionario de Nombres de certificados y thumbprints
+  no_log: true
+  set_fact:
+    thumbprints: "{{ thumbprints | default({}) | combine({ (item.friendly_name.split(' @ ')[0].split(' ')[0]) : item.thumbprint }) }}"
+  with_items: "{{ CertList | to_json | from_json | json_query('certificates[*]') }}"
+
+- name: Creando certificado para sitio en {{ inventory_hostname }}
+  win_command: >
+    wacs --source manual --host "{{ item.site }}"
+        --friendlyname "{{ item.site }}"
+        --certificatestore WebHosting
+        --accepttos
+        --emailaddress {{ winacme_email }}
+        --commonname "{{ item.site }}"
+  args:
+    chdir: "{{ winacme_path }}"
+  loop: "{{ sites }}"
+  when:
+    - item.https == 1
+    - thumbprints.get(item.site) is not defined
+
+- name: Crear carpetas para sitios en {{ inventory_hostname }}
+  win_file:
+    path: "{{ iis_apps_path }}\\{{ item.site }}"
+    state: directory
+  with_items: "{{ sites }}"
+
+- name: Crear carpetas para logs de los sitios en {{ inventory_hostname }}
+  win_file:
+    path: "D:\\IIS-LOGS\\websites\\{{ item.site }}"
+    state: directory
+  with_items: "{{ sites }}"
+
+- name: Creando nuevo apppool en ISS de {{ inventory_hostname }}
+  win_iis_webapppool:
+    name: "{{ item.site }}"
+    state: started
+  with_items: "{{ sites }}"
+
+- name: Creando configuracion para sitios en IIS site de {{ inventory_hostname }}
+  win_iis_website:
+    name: "{{ item.site }}"
+    state: started
+    port: 80
+    ssl: yes
+    ip: '*'
+    hostname: "{{ item.site }}"
+    application_pool: "{{ item.site }}"
+    physical_path: "{{ iis_apps_path }}\\{{ item.site }}"
+    parameters: "logfile.directory:D:\\IIS-LOGS\\websites\\{{ item.site }}|logfile.period:Hourly|logFile.logFormat:W3C"
+  register: website
+  with_items: "{{ sites }}"
+
+# - name: Debug de variable Thumbprints
+#   debug:
+#     var: thumbprints
+
+- name: Creando binding https para sitios en IIS de {{ inventory_hostname }}
+  win_iis_webbinding:
+    name: "{{ item.site }}"
+    ssl_flags: 1  # SNI activado
+    protocol: https
+    host_header: "{{ item.site }}"
+    port: 443
+    ip: "*"
+    certificate_store_name: WebHosting
+    certificate_hash: "{{ thumbprints.get(item.site) }}"
+    state: present
+    attributes:
+      managedRuntimeVersion: v4.0
+  register: binding_info
+  loop: "{{ sites }}"
+  when:
+    - item.https == 1
+    - thumbprints.get(item.site) is defined
+
+- name: Verify sites are accessible
+  uri:
+    url: "https://{{ item.site }}"
+    method: GET
+    status_code: [200, 301, 302]
+  loop: "{{ sites }}"
+  when: item.https == 1
+
+# - name: Debug host headers
+#   debug:
+#     msg: "Creating binding for {{ item.site }} with thumbprint {{ thumbprints.get(item.site) }}"
+#   loop: "{{ sites }}"
+#   when: item.https == 1
+
+
+# - name: Informacion de webapps creadas en {{ inventory_hostname }}
+#   debug:
+#     var: website
+
+
+# - name: Informacion de de bindings creados/modificados en {{ inventory_hostname }}
+#   debug:
+#     var: binding_info
+
+# - debug:
+#     msg: |
+#       El Thumbprint para {{ item.site }} es "{{ CertList | to_json | from_json| json_query('certificates[?contains(friendly_name,`{}`)].thumbprint'.format(item.site))|first }}"
+#   loop: "{{ sites }}"
+#   when: item.https == 1

@@ -1,0 +1,101 @@
+---
+# - name: Listar servicios MSSQL
+#   win_service_info:
+#     name: MSSQLSERVER
+#   register: sql_service_check
+#   ignore_errors: yes
+
+- name: Mostrar estado de SQL Server
+  debug:
+    msg: "SQL Server {{ mssql_instance_name }}: {{ 'Instalado' if sql_service_check.services is defined and sql_service_check.services else 'No instalado' }}"
+
+- block:
+    - name: Descargar SQL Server 2016 Express
+      win_get_url:
+        url: https://download.microsoft.com/download/3/7/6/3767d272-76a1-4f31-8849-260bd37924e4/SQLServer2016-SSEI-Expr.exe
+        dest: "{{ downloads_dir }}\\SQLEXPR_x64.exe"
+        timeout: 600
+
+    - name: Crear archivo de configuración para SQL Server
+      win_copy:
+        content: |
+          [OPTIONS]
+          ACTION="Install"
+          FEATURES=SQLENGINE,CONN,IS,BC,SDK,BOL
+          INSTANCENAME="{{ mssql_instance_name }}"
+          INSTANCEDIR="C:\Program Files\Microsoft SQL Server"
+          AGTSVCSTARTUPTYPE="Manual"
+          COMMFABRICPORT="0"
+          COMMFABRICNETWORKLEVEL="0"
+          COMMFABRICENCRYPTION="0"
+          MATRIXCMBRICKCOMMPORT="0"
+          SQLSVCSTARTUPTYPE="Automatic"
+          FILESTREAMLEVEL="0"
+          ENABLERANU="True"
+          SQLCOLLATION="SQL_Latin1_General_CP1_CI_AS"
+          SQLSYSADMINACCOUNTS="BUILTIN\Administrators"
+          ADDCURRENTUSERASSQLADMIN="True"
+          TCPENABLED="1"
+          NPENABLED="0"
+          BROWSERSVCSTARTUPTYPE="Disabled"
+          IACCEPTSQLSERVERLICENSETERMS="True"
+          SECURITYMODE="SQL"
+          SAPWD="{{ mssql_sa_password }}"
+        dest: "{{ downloads_dir }}\\sql_config.ini"
+
+    - name: Instalar SQL Server 2016 Express
+      win_shell: |
+        Start-Process -FilePath "{{ downloads_dir }}\SQLEXPR_x64.exe" -ArgumentList "/ConfigurationFile={{ downloads_dir }}\sql_config.ini", "/QUIET"
+      register: sql_install
+      timeout: 1800
+
+    - name: Esperar a que el servicio SQL Server esté disponible
+      win_service:
+        name: "MSSQL${{ mssql_instance_name }}"
+        state: started
+        start_mode: auto
+      retries: 10
+      delay: 30
+
+  when: sql_service_check.services is not defined or not sql_service_check.services
+
+- name: Habilitar protocolo TCP/IP para SQL Server
+  win_shell: |
+    Import-Module SqlServer -ErrorAction SilentlyContinue
+    $instance = "{{ ansible_hostname }}\{{ mssql_instance_name }}"
+    $smo = New-Object Microsoft.SqlServer.Management.Smo.Server $instance
+    $tcp = $smo.ServerInstances['{{ mssql_instance_name }}'].ServerProtocols['Tcp']
+    $tcp.IsEnabled = $true
+    $tcp.Alter()
+  ignore_errors: yes
+
+- name: Configurar puerto TCP para SQL Server
+  win_reg_stat:
+    path: "HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server\\MSSQL13.{{ mssql_instance_name }}\\MSSQLServer\\SuperSocketNetLib\\Tcp\\IPAll"
+    name: TcpPort
+  register: tcp_port_check
+
+- name: Establecer puerto TCP 1433
+  win_regedit:
+    path: "HKLM:\\SOFTWARE\\Microsoft\\Microsoft SQL Server\\MSSQL13.{{ mssql_instance_name }}\\MSSQLServer\\SuperSocketNetLib\\Tcp\\IPAll"
+    name: TcpPort
+    data: "{{ mssql_tcp_port }}"
+    type: string
+  when: tcp_port_check.value != mssql_tcp_port | string
+
+- name: Reiniciar servicio SQL Server
+  win_service:
+    name: "MSSQL${{ mssql_instance_name }}"
+    state: restarted
+  when: tcp_port_check.value != mssql_tcp_port | string
+
+- name: Verificar conexión a SQL Server
+  win_shell: |
+    sqlcmd -S "{{ ansible_hostname }}\{{ mssql_instance_name }}" -U sa -P "{{ mssql_sa_password }}" -Q "SELECT @@VERSION"
+  register: sql_test
+  ignore_errors: yes
+
+- name: Mostrar resultado de la instalación
+  debug:
+    msg: "✓ SQL Server 2016 Express instalado y configurado correctamente"
+  when: sql_test.rc == 0

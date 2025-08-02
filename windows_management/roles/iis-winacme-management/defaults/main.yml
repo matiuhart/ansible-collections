@@ -1,0 +1,3 @@
+---
+winacme_install: true
+winacme_path: "C:\\Program Files\\win-acme"

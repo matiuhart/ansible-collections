@@ -1,0 +1,42 @@
+---
+- name: Verificar si .NET Framework 4.8 ya está instalado
+  win_reg_stat:
+    path: HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full
+    name: Release
+  register: dotnet_version
+
+- name: Mostrar versión actual de .NET Framework
+  debug:
+    msg: "Versión de .NET Framework detectada: {{ dotnet_version.value | default('No instalado') }}"
+
+- block:
+    - name: Descargar .NET Framework 4.8
+      win_get_url:
+        url: https://download.microsoft.com/download/7/D/E/7DE045F2-F793-4E7B-9E9A-69CFA6892C6D/NDP48-Web.exe
+        dest: "{{ downloads_dir }}\\NDP48-Web.exe"
+        timeout: 300
+
+    - name: Instalar .NET Framework 4.8
+      win_package:
+        path: "{{ downloads_dir }}\\NDP48-Web.exe"
+        arguments: /quiet /norestart
+        state: present
+        wait_for_children: yes
+      register: dotnet_install
+
+    - name: Verificar si se requiere reinicio
+      set_fact:
+        ansible_reboot_pending: true
+      when: dotnet_install.reboot_required | default(false)
+
+  when: dotnet_version.value is not defined or dotnet_version.value < 528040
+
+- name: Confirmar instalación de .NET Framework 4.8
+  win_reg_stat:
+    path: HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full
+    name: Release
+  register: dotnet_final_version
+
+- name: Mostrar resultado de instalación
+  debug:
+    msg: "✓ .NET Framework 4.8 instalado correctamente. Release: {{ dotnet_final_version.value | default('Error') }}"
