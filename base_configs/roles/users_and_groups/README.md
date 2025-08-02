@@ -42,7 +42,7 @@ host_groups: {}
 
 
 ## Variable definition for users info
-
+```
 user_info:
   user_1:
     shell: /bin/bash
@@ -73,3 +73,4 @@ group_info:
     gid: 1113
   my_group_groups_2:
     gid: 1114
+```
